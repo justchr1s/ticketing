@@ -63,3 +63,44 @@ it('nullifies technicien when technicien is deleted', function () {
 
     expect($ticket->fresh()->technicien_id)->toBeNull();
 });
+
+it('can transition from Ouvert to EnCours', function () {
+    $ticket = Ticket::factory()->create(['etat' => EtatTicket::Ouvert]);
+
+    $ticket->transitionTo(EtatTicket::EnCours);
+
+    expect($ticket->fresh()->etat)->toBe(EtatTicket::EnCours)
+        ->and($ticket->fresh()->date_resolution)->toBeNull();
+});
+
+it('can transition from EnCours to Ferme and sets date_resolution', function () {
+    $ticket = Ticket::factory()->enCours()->create();
+
+    $ticket->transitionTo(EtatTicket::Ferme);
+
+    $fresh = $ticket->fresh();
+    expect($fresh->etat)->toBe(EtatTicket::Ferme)
+        ->and($fresh->date_resolution)->not->toBeNull();
+});
+
+it('can transition from EnCours to Cloture and sets date_resolution', function () {
+    $ticket = Ticket::factory()->enCours()->create();
+
+    $ticket->transitionTo(EtatTicket::Cloture);
+
+    $fresh = $ticket->fresh();
+    expect($fresh->etat)->toBe(EtatTicket::Cloture)
+        ->and($fresh->date_resolution)->not->toBeNull();
+});
+
+it('throws exception on invalid transition', function () {
+    $ticket = Ticket::factory()->create(['etat' => EtatTicket::Ouvert]);
+
+    $ticket->transitionTo(EtatTicket::Ferme);
+})->throws(InvalidArgumentException::class);
+
+it('throws exception when transitioning from terminal state', function () {
+    $ticket = Ticket::factory()->create(['etat' => EtatTicket::Ferme]);
+
+    $ticket->transitionTo(EtatTicket::Ouvert);
+})->throws(InvalidArgumentException::class);

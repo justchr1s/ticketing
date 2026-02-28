@@ -28,4 +28,21 @@ enum EtatTicket: string
             self::Cloture => 'gray',
         };
     }
+
+    /**
+     * @return array<self>
+     */
+    public function allowedTransitions(): array
+    {
+        return match ($this) {
+            self::Ouvert => [self::EnCours],
+            self::EnCours => [self::Ferme, self::Cloture],
+            self::Ferme, self::Cloture => [],
+        };
+    }
+
+    public function canTransitionTo(self $target): bool
+    {
+        return in_array($target, $this->allowedTransitions(), true);
+    }
 }

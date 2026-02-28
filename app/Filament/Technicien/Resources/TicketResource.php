@@ -7,6 +7,7 @@ use App\Enums\PrioriteTicket;
 use App\Filament\Technicien\Resources\TicketResource\Pages;
 use App\Models\Technicien;
 use App\Models\Ticket;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -115,6 +116,29 @@ class TicketResource extends Resource
                     ->relationship('technicien', 'nom'),
             ])
             ->actions([
+                Action::make('debuter')
+                    ->label('Débuter')
+                    ->icon('heroicon-o-play')
+                    ->color('warning')
+                    ->visible(fn (Ticket $record): bool => $record->etat === EtatTicket::Ouvert && $record->technicien_id !== null)
+                    ->authorize('update')
+                    ->action(fn (Ticket $record) => $record->transitionTo(EtatTicket::EnCours)),
+                Action::make('fermer')
+                    ->label('Fermer')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (Ticket $record): bool => $record->etat === EtatTicket::EnCours)
+                    ->authorize('update')
+                    ->requiresConfirmation()
+                    ->action(fn (Ticket $record) => $record->transitionTo(EtatTicket::Ferme)),
+                Action::make('cloturer')
+                    ->label('Clôturer')
+                    ->icon('heroicon-o-archive-box')
+                    ->color('gray')
+                    ->visible(fn (Ticket $record): bool => $record->etat === EtatTicket::EnCours)
+                    ->authorize('update')
+                    ->requiresConfirmation()
+                    ->action(fn (Ticket $record) => $record->transitionTo(EtatTicket::Cloture)),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),

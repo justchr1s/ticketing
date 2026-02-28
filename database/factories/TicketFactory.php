@@ -42,4 +42,12 @@ class TicketFactory extends Factory
             'date_resolution' => null,
         ]);
     }
+
+    public function enCours(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'etat' => EtatTicket::EnCours,
+            'date_resolution' => null,
+        ]);
+    }
 }

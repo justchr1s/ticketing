@@ -40,4 +40,21 @@ class Ticket extends Model
     {
         return $this->belongsTo(Client::class);
     }
+
+    public function transitionTo(EtatTicket $newState): void
+    {
+        if (! $this->etat->canTransitionTo($newState)) {
+            throw new \InvalidArgumentException(
+                "Cannot transition from {$this->etat->value} to {$newState->value}."
+            );
+        }
+
+        $this->etat = $newState;
+
+        if (in_array($newState, [EtatTicket::Ferme, EtatTicket::Cloture], true)) {
+            $this->date_resolution = now();
+        }
+
+        $this->save();
+    }
 }

@@ -139,3 +139,54 @@ it('hides workflow actions on ferme ticket', function () {
         ->assertActionHidden(TestAction::make('fermer')->table($ticket))
         ->assertActionHidden(TestAction::make('cloturer')->table($ticket));
 });
+
+it('can filter tickets by date range', function () {
+    $admin = Technicien::factory()->administrateur()->create();
+    $client = Client::factory()->create();
+
+    $oldTicket = Ticket::factory()->create([
+        'client_id' => $client->id,
+        'technicien_id' => $admin->id,
+        'etat' => EtatTicket::Ouvert,
+        'created_at' => '2025-01-15',
+    ]);
+
+    $recentTicket = Ticket::factory()->create([
+        'client_id' => $client->id,
+        'technicien_id' => $admin->id,
+        'etat' => EtatTicket::Ouvert,
+        'created_at' => '2026-02-20',
+    ]);
+
+    $this->actingAs($admin, 'technicien');
+
+    Livewire::test(ListTickets::class)
+        ->assertCanSeeTableRecords([$oldTicket, $recentTicket])
+        ->filterTable('created_at', ['created_from' => '2026-01-01', 'created_until' => '2026-12-31'])
+        ->assertCanSeeTableRecords([$recentTicket])
+        ->assertCanNotSeeTableRecords([$oldTicket]);
+});
+
+it('can search tickets by description', function () {
+    $admin = Technicien::factory()->administrateur()->create();
+    $client = Client::factory()->create();
+
+    $ticket1 = Ticket::factory()->create([
+        'client_id' => $client->id,
+        'technicien_id' => $admin->id,
+        'description' => 'The server crashed unexpectedly',
+    ]);
+
+    $ticket2 = Ticket::factory()->create([
+        'client_id' => $client->id,
+        'technicien_id' => $admin->id,
+        'description' => 'Password reset needed for user',
+    ]);
+
+    $this->actingAs($admin, 'technicien');
+
+    Livewire::test(ListTickets::class)
+        ->searchTable('server crashed')
+        ->assertCanSeeTableRecords([$ticket1])
+        ->assertCanNotSeeTableRecords([$ticket2]);
+});

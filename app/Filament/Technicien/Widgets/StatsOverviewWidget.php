@@ -36,6 +36,12 @@ class StatsOverviewWidget extends BaseWidget
         ];
 
         if ($isAdmin) {
+            $stats[] = Stat::make('Non assignés', Ticket::query()
+                ->whereNull('technicien_id')
+                ->where('etat', EtatTicket::Ouvert)
+                ->count())
+                ->color('danger')
+                ->icon('heroicon-o-exclamation-triangle');
             $stats[] = Stat::make('Clients', Client::count())
                 ->icon('heroicon-o-user-group');
             $stats[] = Stat::make('Techniciens', Technicien::count())

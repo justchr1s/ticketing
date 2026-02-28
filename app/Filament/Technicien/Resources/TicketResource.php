@@ -7,10 +7,12 @@ use App\Enums\PrioriteTicket;
 use App\Filament\Technicien\Resources\TicketResource\Pages;
 use App\Models\Technicien;
 use App\Models\Ticket;
+use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -18,6 +20,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -83,6 +87,11 @@ class TicketResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->limit(40),
+                TextColumn::make('description')
+                    ->label('Description')
+                    ->searchable()
+                    ->limit(50)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('client.nom')
                     ->label('Client')
                     ->searchable()
@@ -114,6 +123,39 @@ class TicketResource extends Resource
                 SelectFilter::make('technicien_id')
                     ->label('Technicien')
                     ->relationship('technicien', 'nom'),
+                Filter::make('created_at')
+                    ->schema([
+                        DatePicker::make('created_from')
+                            ->label('Du'),
+                        DatePicker::make('created_until')
+                            ->label('Au'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = Indicator::make('Du '.Carbon::parse($data['created_from'])->format('d/m/Y'))
+                                ->removeField('created_from');
+                        }
+
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = Indicator::make('Au '.Carbon::parse($data['created_until'])->format('d/m/Y'))
+                                ->removeField('created_until');
+                        }
+
+                        return $indicators;
+                    }),
             ])
             ->actions([
                 Action::make('debuter')

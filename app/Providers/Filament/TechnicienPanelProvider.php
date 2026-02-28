@@ -36,6 +36,7 @@ class TechnicienPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Technicien/Widgets'), for: 'App\\Filament\\Technicien\\Widgets')
+            ->databaseNotifications()
             ->widgets([])
             ->middleware([
                 EncryptCookies::class,
